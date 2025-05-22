@@ -1,6 +1,9 @@
 import os
 import dotenv
 import re
+import tkinter as tk
+from tkinter import filedialog, messagebox
+import customtkinter as ctk
 from typing import Dict, Tuple, List
 
 # Caminho do arquivo .env
@@ -53,6 +56,7 @@ def get_db_origins() -> Dict[str, Tuple[str, str, str, str]]:
             f.write("DB_1_PORTA=3306\n")
             f.write("DB_1_USER=root\n")
             f.write("DB_1_PASS=root\n")
+            f.write("DB_1_NOME=Banco Local\n")
         
         # Recarrega o arquivo .env
         dotenv.load_dotenv(ENV_PATH, override=True)
@@ -85,6 +89,7 @@ def get_db_names() -> Dict[str, str]:
         # Adiciona um banco padrão ao arquivo .env
         with open(ENV_PATH, "a") as f:
             f.write("BANCO_1=waybe\n")
+            f.write("BANCO_1_NOME=Waybe\n")
         
         # Recarrega o arquivo .env
         dotenv.load_dotenv(ENV_PATH, override=True)
@@ -179,14 +184,10 @@ def get_next_id(prefix, env_path=".env"):
     ids = [int(id_str) for id_str in matches]
     return str(max(ids) + 1)
 
-# A interface gráfica de configuração só deve rodar se este arquivo for executado diretamente
 if __name__ == "__main__":
-    import customtkinter as ctk
-    from tkinter import messagebox, filedialog
-
-    # Carrega variáveis do .env
+    # Carrega as configurações do arquivo .env
     load_env_config()
-
+    
     # UI Principal
     ctk.set_appearance_mode("dark")
     ctk.set_default_color_theme("blue")
@@ -366,30 +367,30 @@ if __name__ == "__main__":
         java_home = entry_java.get()
         maven_home = entry_maven.get()
         
-        # Lê o conteúdo atual do arquivo
+        # Lê o conteúdo atual do arquivo .env
         env_content = ""
         if os.path.exists(ENV_PATH):
             with open(ENV_PATH, "r") as f:
                 env_content = f.read()
         
         # Remove as linhas existentes de JAVA_HOME e MAVEN_HOME
-        lines = env_content.splitlines()
-        new_lines = [line for line in lines if not line.startswith("JAVA_HOME=") and not line.startswith("MAVEN_HOME=")]
+        env_lines = env_content.splitlines()
+        env_lines = [line for line in env_lines if not line.startswith("JAVA_HOME=") and not line.startswith("MAVEN_HOME=")]
         
         # Adiciona as novas linhas
-        new_lines.append(f"JAVA_HOME={java_home}")
-        new_lines.append(f"MAVEN_HOME={maven_home}")
+        env_lines.append(f"JAVA_HOME={java_home}")
+        env_lines.append(f"MAVEN_HOME={maven_home}")
         
-        # Escreve de volta no arquivo
+        # Escreve de volta no arquivo .env
         with open(ENV_PATH, "w") as f:
-            f.write("\n".join(new_lines) + "\n")
+            f.write("\n".join(env_lines))
         
         # Recarrega as variáveis de ambiente
         load_env_config()
         
-        messagebox.showinfo("Salvo", "Caminhos JAVA_HOME e MAVEN_HOME salvos no .env")
-
-    btn_salvar_geral = ctk.CTkButton(app, text="Salvar JAVA/MAVEN", command=salvar_java_maven)
-    btn_salvar_geral.pack(pady=10)
+        messagebox.showinfo("Salvo", "Configurações de JAVA e MAVEN salvas com sucesso.")
+    
+    btn_salvar_java_maven = ctk.CTkButton(frame_java, text="Salvar Configurações JAVA/MAVEN", command=salvar_java_maven)
+    btn_salvar_java_maven.pack(padx=10, pady=5)
 
     app.mainloop()
