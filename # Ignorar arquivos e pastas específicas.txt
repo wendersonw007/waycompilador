@@ -1,0 +1,6 @@
+# Ignorar arquivos e pastas específicas
+.env
+antigo/
+backup1/
+pastav/
+.venv/

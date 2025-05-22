@@ -1,0 +1,611 @@
+services:
+  dozzle:
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 8080:8080
+      
+  # mysql:
+  #   image: 'mysql:8.0.29-debian'
+  #   env_file:
+  #     - .env    
+  #   container_name: mysql
+  #   environment:
+  #     - MYSQL_DATABASE=waybe
+  #     - MYSQL_ROOT_PASSWORD=root
+  #     - TZ=America/Sao_Paulo
+  #   volumes:
+  #     - ./bd:/var/lib/mysql
+  #     - ./mysql/my.cnf:/etc/my.cnf
+  #   ports:
+  #     - "${PORTA_BD}:3306"
+  #   networks:
+  #     - spring-cloud-network
+  #   restart: always
+
+  service-registry:
+    image: sifatsistemas/ms-serviceregistry:${BRANCH}
+    env_file:
+      - .env
+    container_name: service-registry
+    ports:
+      - '8761:8761'
+    environment:
+      PROFILE: homolog
+      JAR_NAME: SERVICE-REGISTRY.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-gateway:
+    image: sifatsistemas/ms-apigateway:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-gateway
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-GATEWAY.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+    ports:
+      - "8081:8081"
+    depends_on:
+      - service-registry
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-usuario-sessao:
+    image: sifatsistemas/ms-apiusuariosessao:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-usuario-sessao
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-USUARIO-SESSAO.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8082:8082"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-waychef:
+    image: sifatsistemas/ms-apiwaychef:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-waychef
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-WAYCHEF.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8115:8115"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-vendas:
+    image: sifatsistemas/ms-apivendas:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-vendas
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-VENDAS.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8098:8098"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-pagamento:
+    image: sifatsistemas/ms-apipagamento:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-pagamento
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-PAGAMENTO.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8119:8119"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-gestao-consumo:
+    image: sifatsistemas/ms-apigestaoconsumo:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-gestao-consumo
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-GESTAO-CONSUMO.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8088:8088"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-pessoa:
+    image: sifatsistemas/ms-apipessoa:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-pessoa
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-PESSOA.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8104:8104"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-financeiro:
+    image: sifatsistemas/ms-apifinanceiro:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-financeiro
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-FINANCEIRO.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8173:8173"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-fidelidade:
+    image: sifatsistemas/ms-apifidelidade:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-fidelidade
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-FIDELIDADE.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8112:8112"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-estoque:
+    image: sifatsistemas/ms-apiestoque:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-estoque
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-ESTOQUE.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8107:8107"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-configuracoes-lojas:
+    image: sifatsistemas/ms-apiconfiguracoeslojas:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-configuracoes-lojas
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-CONFIGURACOES-LOJAS.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8089:8089"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-central-integracoes:
+    image: sifatsistemas/ms-apicentralintegracoes:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-central-integracoes
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-CENTRAL-INTEGRACOES.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8118:8118"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-aplicacoes-servicos:
+    image: sifatsistemas/ms-apiaplicacoesservicos:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-aplicacoes-servicos
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-APLICACOES-SERVICOS.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8199:8199"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-relatorios:
+    image: sifatsistemas/ms-apirelatorios:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-relatorios
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-RELATORIOS.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8204:8204"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-email:
+    image: sifatsistemas/ms-apiemail:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-email
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-EMAIL.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8202:8202"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-waybe:
+    image: sifatsistemas/ms-apiwaybe:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-waybe
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-WAYBE.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8114:8114"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-produtos:
+    image: sifatsistemas/ms-apiprodutos:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-produtos
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-PRODUTOS.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8185:8185"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-impostos:
+    image: sifatsistemas/ms-apiimpostos:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-impostos
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-IMPOSTOS.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8196:8196"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-cliente:
+    image: sifatsistemas/ms-apicliente:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-cliente
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-CLIENTE.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8085:8085"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-bucket:
+    image: sifatsistemas/ms-apibucket:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-bucket
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-BUCKET.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8193:8193"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+  api-contrato:
+    image: sifatsistemas/ms-apicontrato:${BRANCH}
+    env_file:
+      - .env
+    container_name: api-contrato
+    environment:
+      PROFILE: homolog
+      JAR_NAME: API-CONTRATO.jar
+      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+      WAYBE_BANCO_HOST: ${HOST_BD}
+      WAYBE_BANCO_PORTA: ${PORTA_BD}
+      WAYBE_BANCO_NOME: ${NOME_BD}
+      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+      WAYBE_BANCO_SENHA: ${SENHA_BD}
+      WAYBE_KAFKA_HOST: 192.168.5.237
+      WAYBE_KAFKA_PORTA: 9092
+    ports:
+      - "8113:8113"
+    depends_on:
+      - service-registry
+      - api-gateway
+    networks:
+      - spring-cloud-network
+    restart: always
+
+#  api-sincronizador:
+#    image: sifatsistemas/ms-apisincronizador:${BRANCH}
+#    env_file:
+#      - .env
+#    container_name: api-sincronizador
+#    environment:
+#      PROFILE: homolog
+#      JAR_NAME: API-SINCRONIZADOR.jar
+#      ADDITIONAL_OPTS: -Xms100M -Xmx100M
+#      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://renan:renan123@service-registry:8761/eureka
+#      WAYBE_BANCO_HOST: ${HOST_BD}
+#      WAYBE_BANCO_PORTA: ${PORTA_BD}
+#      WAYBE_BANCO_NOME: ${NOME_BD}
+#      WAYBE_BANCO_USUARIO: ${USUARIO_BD}
+#      WAYBE_BANCO_SENHA: ${SENHA_BD}
+#      WAYBE_KAFKA_HOST: 192.168.5.237
+#      WAYBE_KAFKA_PORTA: 9092
+#    ports:
+#      - "8069:8069"
+#    depends_on:
+#      - mysql
+#      - service-registry
+#      - api-gateway
+#    networks:
+#      - spring-cloud-network
+
+networks:
+  spring-cloud-network:
+    driver: bridge
+
+volumes:
+  my-db:
