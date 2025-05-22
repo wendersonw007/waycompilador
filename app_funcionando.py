@@ -9,25 +9,14 @@ from pathlib import Path
 import threading
 
 # === INTEGRAÇÃO COM CONFIG.PY ===
-from config import load_env_config
+from config import load_env_config, get_db_origins, get_db_names, get_origin_combo_values, get_db_combo_values
+
+# Carrega as configurações do arquivo .env
 load_env_config()
 
-# Configurações padrão do banco de dados
-origem_map = {
-    "1": ("127.0.0.1", "3306", "root", "root"),
-    "2": ("192.168.5.174", "3306", "root", "root"),
-    "3": ("192.168.5.217", "3306", "root", "root"),
-    "4": ("127.0.0.1", "3309", "root", "root"),
-    "5": ("rasp.local", "3306", "root", "root")
-}
-
-banco_map = {
-    "1": "waybe",
-    "2": "waybe",
-    "3": "waybe",
-    "4": "micro-waychef",
-    "5": "waybe"
-}
+# Obtém as configurações de banco de dados do arquivo .env
+origem_map = get_db_origins()
+banco_map = get_db_names()
 
 compilacao_map = {
     "1": "ALL",
@@ -142,8 +131,17 @@ def iniciar_processo(diretorio_entry, branch_combo, banco_combo, origem_combo, c
             return
 
     # Passo 3: Configuração do banco
-    banco = banco_map.get(banco_opcao.split('.')[0])
-    ip_banco, porta_banco, usuario_banco, senha_banco = origem_map.get(origem_opcao.split('.')[0], ("127.0.0.1", "3306", "root", "root"))
+    # Recarrega as configurações do arquivo .env para garantir que temos os dados mais recentes
+    load_env_config()
+    origem_map_atual = get_db_origins()
+    banco_map_atual = get_db_names()
+    
+    # Obtém as configurações selecionadas
+    banco_id = banco_opcao.split('.')[0]
+    origem_id = origem_opcao.split('.')[0]
+    
+    banco = banco_map_atual.get(banco_id, banco_map.get(banco_id, "waybe"))
+    ip_banco, porta_banco, usuario_banco, senha_banco = origem_map_atual.get(origem_id, origem_map.get(origem_id, ("127.0.0.1", "3306", "root", "root")))
 
     # Passo 4: Compilação com Maven
     mvn_comando = f"mvn -T 10 clean install -am -Dgenerator-phase=generate-sources -Duser={usuario_banco} -Dpass={senha_banco} -Durl=jdbc:mysql://{ip_banco}:{porta_banco}/{banco}?useSSL=false -DskipTests=true"
@@ -207,12 +205,12 @@ branch_combo.grid(row=0, column=1, sticky="w", padx=5, pady=5)
 
 # Banco
 ctk.CTkLabel(config_grid, text="Banco:").grid(row=1, column=0, sticky="w", padx=5, pady=5)
-banco_combo = ctk.CTkComboBox(config_grid, width=400, values=["1. Waybe-working", "2. Waybe-RC", "3. Waybe-master", "4. Micro-Waychef", "5. Sessao"])
+banco_combo = ctk.CTkComboBox(config_grid, width=400, values=get_db_combo_values())
 banco_combo.grid(row=1, column=1, sticky="w", padx=5, pady=5)
 
 # Origem do Banco
 ctk.CTkLabel(config_grid, text="Origem do Banco:").grid(row=2, column=0, sticky="w", padx=5, pady=5)
-origem_combo = ctk.CTkComboBox(config_grid, width=400, values=["1. Meu Banco", "2. MeuAmbienteLinux", "3. ANOTAAI", "4. Docker", "5. RASP"])
+origem_combo = ctk.CTkComboBox(config_grid, width=400, values=get_origin_combo_values())
 origem_combo.grid(row=2, column=1, sticky="w", padx=5, pady=5)
 
 # Compilação
