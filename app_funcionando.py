@@ -7,16 +7,23 @@ from uuid import uuid4
 from PIL import Image
 from pathlib import Path
 import threading
+import sys
 
 # === INTEGRAÇÃO COM CONFIG.PY ===
 from config import load_env_config, get_db_origins, get_db_names, get_origin_combo_values, get_db_combo_values
 
-# Carrega as configurações do arquivo .env
-load_env_config()
+# Função para recarregar configurações
+def reload_configurations():
+    global origem_map, banco_map
+    # Carrega as configurações do arquivo .env
+    load_env_config()
+    # Obtém as configurações de banco de dados do arquivo .env
+    origem_map = get_db_origins()
+    banco_map = get_db_names()
+    return origem_map, banco_map
 
-# Obtém as configurações de banco de dados do arquivo .env
-origem_map = get_db_origins()
-banco_map = get_db_names()
+# Carrega as configurações iniciais
+reload_configurations()
 
 compilacao_map = {
     "1": "ALL",
@@ -163,35 +170,65 @@ def iniciar_processo(diretorio_entry, branch_combo, banco_combo, origem_combo, c
 
     start_button.configure(state="normal")
 
+# Função para centralizar a janela na tela
+def center_window(window, width, height):
+    # Obtém as dimensões da tela
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+    
+    # Calcula a posição para centralizar a janela
+    x = (screen_width - width) // 2
+    y = (screen_height - height) // 2
+    
+    # Define a geometria da janela
+    window.geometry(f"{width}x{height}+{x}+{y}")
+
 # Configuração da Janela Principal
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 app = ctk.CTk()
 app.title("Sifat Compilador Waybe Web Java")
-app.geometry("1100x1000")
+
+# Define o tamanho inicial da janela e centraliza
+window_width = 1100
+window_height = 800
+app.after(10, lambda: center_window(app, window_width, window_height))  # Centraliza após a janela ser criada
+
+# Configura a janela para ser responsiva
 app.resizable(True, True)
+app.grid_columnconfigure(0, weight=1)
+app.grid_rowconfigure(0, weight=1)
+
+# Container principal para organizar todos os elementos
+main_container = ctk.CTkFrame(app)
+main_container.pack(fill="both", expand=True, padx=10, pady=10)
+main_container.grid_columnconfigure(0, weight=1)
+main_container.grid_rowconfigure((0, 1, 2, 3, 4), weight=1)
 
 # Cabeçalho
-header_frame = ctk.CTkFrame(app)
+header_frame = ctk.CTkFrame(main_container)
 header_frame.pack(fill="x", padx=20, pady=20)
 title = ctk.CTkLabel(header_frame, text="Gerenciador de Branches e Projeto", font=ctk.CTkFont(size=28, weight="bold"))
-title.pack()
+title.pack(fill="x")
 
 # Projeto (Diretório)
-project_frame = ctk.CTkFrame(app, width=1000)
+project_frame = ctk.CTkFrame(main_container)
 project_frame.pack(fill="x", padx=20, pady=10)
+project_frame.grid_columnconfigure(0, weight=1)
 ctk.CTkLabel(project_frame, text="📁 Pasta do Projeto", font=ctk.CTkFont(size=18, weight="bold")).pack(anchor="w", padx=10, pady=5)
 
 project_select_frame = ctk.CTkFrame(project_frame)
 project_select_frame.pack(fill="x", pady=5)
+project_select_frame.grid_columnconfigure(0, weight=1)
 diretorio_entry = ctk.CTkEntry(project_select_frame, placeholder_text="Selecione o diretório do projeto")
-diretorio_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
+diretorio_entry.pack(side="left", fill="x", expand=True, padx=(10, 10))
 diretorio_button = ctk.CTkButton(project_select_frame, text="Selecionar", command=lambda: selecionar_diretorio_projeto(diretorio_entry, branch_combo, start_button))
-diretorio_button.pack(side="right")
+diretorio_button.pack(side="right", padx=(0, 10))
 
 # Configurações (Branch, Banco, Compilação)
-config_frame = ctk.CTkFrame(app, width=1000)
+config_frame = ctk.CTkFrame(main_container)
 config_frame.pack(fill="x", padx=20, pady=10)
+config_frame.grid_columnconfigure(0, weight=1)
 ctk.CTkLabel(config_frame, text="⚙️ Configurações", font=ctk.CTkFont(size=18, weight="bold")).pack(anchor="w", padx=10, pady=5)
 
 config_grid = ctk.CTkFrame(config_frame)
@@ -224,30 +261,82 @@ branch_origem_combo = ctk.CTkComboBox(config_grid, width=400, values=["1. workin
 branch_origem_combo.grid(row=4, column=1, sticky="w", padx=5, pady=5)
 
 # Execução e Logs
-execution_frame = ctk.CTkFrame(app, width=1000)
+execution_frame = ctk.CTkFrame(main_container)
 execution_frame.pack(fill="both", expand=True, padx=20, pady=10)
+execution_frame.grid_columnconfigure(0, weight=1)
+execution_frame.grid_rowconfigure(2, weight=1)  # Para o log_box expandir
 ctk.CTkLabel(execution_frame, text="📜 Logs de Execução", font=ctk.CTkFont(size=18, weight="bold")).pack(anchor="w", padx=10, pady=5)
 
 status_label = ctk.CTkLabel(execution_frame, text="Aguardando início", text_color="gray")
 status_label.pack(anchor="w", padx=10, pady=5)
 
-log_box = ctk.CTkTextbox(execution_frame, height=300, state="disabled")
+log_box = ctk.CTkTextbox(execution_frame, state="disabled")
 log_box.pack(fill="both", expand=True, padx=10, pady=10)
 
 # Botões de Controle
-btn_frame = ctk.CTkFrame(app)
+btn_frame = ctk.CTkFrame(main_container)
 btn_frame.pack(fill="x", padx=20, pady=10)
+btn_frame.grid_columnconfigure((0, 1, 2, 3), weight=1)
 
 start_button = ctk.CTkButton(btn_frame, text="Iniciar Processo", state="disabled", width=200, command=lambda: threading.Thread(target=iniciar_processo, args=(diretorio_entry, branch_combo, banco_combo, origem_combo, compilacao_combo, branch_origem_combo, log_box, status_label, start_button), daemon=True).start())
 start_button.pack(side="left", padx=5)
 
+# Função para atualizar a interface após alterações nas configurações
+def atualizar_interface():
+    # Recarrega as configurações
+    reload_configurations()
+    
+    # Atualiza os valores dos comboboxes
+    origem_combo.configure(values=get_origin_combo_values())
+    banco_combo.configure(values=get_db_combo_values())
+    
+    # Se houver valores selecionados, tenta mantê-los
+    if origem_combo.get():
+        if origem_combo.get() not in get_origin_combo_values():
+            origem_combo.set("")
+    
+    if banco_combo.get():
+        if banco_combo.get() not in get_db_combo_values():
+            banco_combo.set("")
+    
+    # Exibe mensagem de confirmação
+    messagebox.showinfo("Configurações", "Configurações atualizadas com sucesso!")
+
 # Botão para abrir a tela de configuração
 def abrir_tela_configuracao():
-    import subprocess
-    subprocess.Popen(["python", "config.py"])
+    try:
+        # Obtém o diretório atual do script
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        config_path = os.path.join(script_dir, "config.py")
+        
+        # Verifica se o arquivo config.py existe
+        if not os.path.exists(config_path):
+            messagebox.showerror("Erro", f"Arquivo de configuração não encontrado: {config_path}")
+            return
+        
+        # Abre a tela de configuração e aguarda sua conclusão
+        process = subprocess.Popen([sys.executable, config_path])
+        
+        # Configura um verificador periódico para atualizar a interface quando o processo terminar
+        def check_process():
+            if process.poll() is not None:  # Processo terminou
+                atualizar_interface()
+            else:
+                # Verifica novamente após 1 segundo
+                app.after(1000, check_process)
+        
+        # Inicia a verificação
+        app.after(1000, check_process)
+        
+    except Exception as e:
+        messagebox.showerror("Erro", f"Erro ao abrir configurações: {str(e)}")
 
 config_button = ctk.CTkButton(btn_frame, text="Configuração", command=abrir_tela_configuracao)
 config_button.pack(side="left", padx=5)
+
+# Botão para atualizar configurações manualmente
+refresh_button = ctk.CTkButton(btn_frame, text="Atualizar Configurações", command=atualizar_interface)
+refresh_button.pack(side="left", padx=5)
 
 clear_button = ctk.CTkButton(btn_frame, text="Limpar Log", command=lambda: log_box.configure(state="normal") or log_box.delete(1.0, ctk.END) or log_box.configure(state="disabled"))
 clear_button.pack(side="right", padx=5)
