@@ -195,9 +195,8 @@ app.grid_columnconfigure(0, weight=1)
 app.grid_rowconfigure(0, weight=1)
 
 # Define o tamanho inicial da janela e centraliza
-# Calcula 90% da largura e altura da tela para garantir responsividade em telas menores
-window_width = int(app.winfo_screenwidth() * 0.9)
-window_height = int(app.winfo_screenheight() * 0.85)
+window_width = min(1100, app.winfo_screenwidth() - 100)
+window_height = min(800, app.winfo_screenheight() - 100)
 app.after(10, lambda: center_window(app, window_width, window_height))  # Centraliza após a janela ser criada
 
 # Container principal para organizar todos os elementos
@@ -282,52 +281,26 @@ btn_frame.grid_columnconfigure((0, 1, 2, 3), weight=1)
 start_button = ctk.CTkButton(btn_frame, text="Iniciar Processo", state="disabled", width=200, command=lambda: threading.Thread(target=iniciar_processo, args=(diretorio_entry, branch_combo, banco_combo, origem_combo, compilacao_combo, branch_origem_combo, log_box, status_label, start_button), daemon=True).start())
 start_button.pack(side="left", padx=5)
 
-# Variáveis para armazenar os valores anteriores para comparação
-previous_origin_values = []
-previous_db_values = []
-
 # Função para atualizar a interface após alterações nas configurações
 def atualizar_interface():
-    global previous_origin_values, previous_db_values
-    
     # Recarrega as configurações
     reload_configurations()
     
-    # Obtém os novos valores
-    new_origin_values = get_origin_combo_values()
-    new_db_values = get_db_combo_values()
+    # Atualiza os valores dos comboboxes
+    origem_combo.configure(values=get_origin_combo_values())
+    banco_combo.configure(values=get_db_combo_values())
     
-    # Verifica se houve alterações comparando com os valores anteriores
-    origin_changed = sorted(previous_origin_values) != sorted(new_origin_values)
-    db_changed = sorted(previous_db_values) != sorted(new_db_values)
+    # Se houver valores selecionados, tenta mantê-los
+    if origem_combo.get():
+        if origem_combo.get() not in get_origin_combo_values():
+            origem_combo.set("")
     
-    # Se houve alterações, atualiza a interface
-    if origin_changed or db_changed:
-        # Atualiza os valores dos comboboxes
-        origem_combo.configure(values=new_origin_values)
-        banco_combo.configure(values=new_db_values)
-        
-        # Se houver valores selecionados, tenta mantê-los
-        if origem_combo.get():
-            if origem_combo.get() not in new_origin_values:
-                origem_combo.set("")
-        
-        if banco_combo.get():
-            if banco_combo.get() not in new_db_values:
-                banco_combo.set("")
-        
-        # Atualiza os valores anteriores
-        previous_origin_values = new_origin_values.copy()
-        previous_db_values = new_db_values.copy()
-        
-        # Exibe mensagem de confirmação
-        messagebox.showinfo("Configurações", "Configurações atualizadas com sucesso!")
+    if banco_combo.get():
+        if banco_combo.get() not in get_db_combo_values():
+            banco_combo.set("")
     
-    # Inicializa os valores anteriores na primeira execução
-    if not previous_origin_values:
-        previous_origin_values = new_origin_values.copy()
-    if not previous_db_values:
-        previous_db_values = new_db_values.copy()
+    # Exibe mensagem de confirmação
+    messagebox.showinfo("Configurações", "Configurações atualizadas com sucesso!")
 
 # Botão para abrir a tela de configuração
 def abrir_tela_configuracao():
@@ -341,40 +314,13 @@ def abrir_tela_configuracao():
             messagebox.showerror("Erro", f"Arquivo de configuração não encontrado: {config_path}")
             return
         
-        # Salva o estado atual das configurações para comparar depois
-        config_antes = {}
-        if os.path.exists(".env"):
-            with open(".env", "r") as f:
-                config_antes = {line.strip() for line in f if line.strip()}
-        
-        # Obtém a posição atual da janela principal
-        x = app.winfo_x()
-        y = app.winfo_y()
-        
-        # Cria um arquivo temporário para passar a posição da janela principal
-        with open("window_position.tmp", "w") as f:
-            f.write(f"{x},{y}")
-        
         # Abre a tela de configuração e aguarda sua conclusão
         process = subprocess.Popen([sys.executable, config_path])
         
         # Configura um verificador periódico para atualizar a interface quando o processo terminar
         def check_process():
             if process.poll() is not None:  # Processo terminou
-                # Remove o arquivo temporário
-                if os.path.exists("window_position.tmp"):
-                    os.remove("window_position.tmp")
-                
-                # Verifica se houve alterações nas configurações
-                config_depois = {}
-                if os.path.exists(".env"):
-                    with open(".env", "r") as f:
-                        config_depois = {line.strip() for line in f if line.strip()}
-                
-                # Só atualiza a interface se houve alterações
-                if config_antes != config_depois:
-                    atualizar_interface()
-                    messagebox.showinfo("Configuração", "Configurações atualizadas com sucesso!")
+                atualizar_interface()
             else:
                 # Verifica novamente após 1 segundo
                 app.after(1000, check_process)

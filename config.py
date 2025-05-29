@@ -193,35 +193,6 @@ class ConfigApp:
         self.root.title("Configuração do Sistema")
         self.root.geometry("600x700")
         
-        # Tenta ler a posição da janela principal para centralizar esta janela
-        try:
-            if os.path.exists("window_position.tmp"):
-                with open("window_position.tmp", "r") as f:
-                    pos = f.read().strip().split(",")
-                    main_x, main_y = int(pos[0]), int(pos[1])
-                    
-                    # Calcula a posição para centralizar esta janela em relação à janela principal
-                    screen_width = self.root.winfo_screenwidth()
-                    screen_height = self.root.winfo_screenheight()
-                    
-                    # Obtém o tamanho desta janela
-                    self.root.update_idletasks()  # Atualiza para obter o tamanho correto
-                    width = self.root.winfo_width()
-                    height = self.root.winfo_height()
-                    
-                    # Calcula a posição centralizada em relação à janela principal
-                    x = main_x + (self.root.winfo_screenwidth() // 2 - width // 2)
-                    y = main_y + (self.root.winfo_screenheight() // 2 - height // 2)
-                    
-                    # Garante que a janela fique dentro da tela
-                    x = max(0, min(x, screen_width - width))
-                    y = max(0, min(y, screen_height - height))
-                    
-                    # Define a posição
-                    self.root.geometry(f"+{x}+{y}")
-        except Exception as e:
-            print(f"Erro ao posicionar janela: {e}")
-        
         # Criar notebook (abas)
         self.notebook = ctk.CTkTabview(self.root)
         self.notebook.pack(fill="both", expand=True, padx=10, pady=10)
@@ -329,10 +300,6 @@ class ConfigApp:
         # Listbox para origens
         self.origens_listbox = tk.Listbox(self.origens_listbox_frame, bg="#2b2b2b", fg="white", font=("Arial", 12), height=10)
         self.origens_listbox.pack(fill="both", expand=True, padx=5, pady=5)
-        
-        # Botão para excluir origem selecionada
-        btn_excluir_origem = ctk.CTkButton(self.origens_listbox_frame, text="Excluir Origem Selecionada", command=self.excluir_origem)
-        btn_excluir_origem.pack(pady=5)
         
         # Atualiza a lista de origens
         self.atualizar_lista_origens()
@@ -442,55 +409,7 @@ class ConfigApp:
         # Adiciona cada origem à lista
         for db_id, (ip, porta, usuario, _) in origens.items():
             nome = display_names.get(db_id, f"Banco {ip}:{porta}")
-            self.origens_listbox.insert(tk.END, f"{db_id}. {nome} ({ip}:{porta})")
-            
-    def excluir_origem(self):
-        # Verifica se há algum item selecionado
-        if not self.origens_listbox.curselection():
-            messagebox.showerror("Erro", "Selecione uma origem para excluir.")
-            return
-        
-        # Obtém o item selecionado
-        selected_index = self.origens_listbox.curselection()[0]
-        selected_item = self.origens_listbox.get(selected_index)
-        
-        # Extrai o ID da origem
-        origem_id = selected_item.split(".")[0]
-        
-        # Confirma a exclusão
-        if not messagebox.askyesno("Confirmar Exclusão", f"Tem certeza que deseja excluir a origem {selected_item}?"):
-            return
-        
-        # Lê o conteúdo atual do arquivo .env
-        env_content = ""
-        if os.path.exists(ENV_PATH):
-            with open(ENV_PATH, "r") as f:
-                env_content = f.read()
-        
-        # Remove as linhas relacionadas a esta origem
-        env_lines = env_content.splitlines()
-        new_env_lines = []
-        
-        for line in env_lines:
-            # Verifica se a linha está relacionada à origem que queremos excluir
-            if not (line.startswith(f"DB_{origem_id}_IP=") or 
-                    line.startswith(f"DB_{origem_id}_PORTA=") or 
-                    line.startswith(f"DB_{origem_id}_USER=") or 
-                    line.startswith(f"DB_{origem_id}_PASS=") or 
-                    line.startswith(f"DB_{origem_id}_NOME=")):
-                new_env_lines.append(line)
-        
-        # Salva o arquivo .env atualizado
-        with open(ENV_PATH, "w") as f:
-            f.write("\n".join(new_env_lines) + "\n")
-        
-        # Recarrega as variáveis de ambiente
-        load_env_config()
-        
-        # Atualiza a lista de origens
-        self.atualizar_lista_origens()
-        
-        messagebox.showinfo("Sucesso", f"Origem excluída com sucesso.")
+            self.origens_listbox.insert(tk.END, f"{nome} ({ip}:{porta})")
     
     def setup_banco_tab(self):
         # Título
@@ -505,10 +424,6 @@ class ConfigApp:
         # Listbox para bancos
         self.bancos_listbox = tk.Listbox(self.bancos_listbox_frame, bg="#2b2b2b", fg="white", font=("Arial", 12), height=10)
         self.bancos_listbox.pack(fill="both", expand=True, padx=5, pady=5)
-        
-        # Botão para excluir banco selecionado
-        btn_excluir_banco = ctk.CTkButton(self.bancos_listbox_frame, text="Excluir Banco Selecionado", command=self.excluir_banco)
-        btn_excluir_banco.pack(pady=5)
         
         # Atualiza a lista de bancos
         self.atualizar_lista_bancos()
@@ -581,52 +496,7 @@ class ConfigApp:
         # Adiciona cada banco à lista
         for db_id, nome in bancos.items():
             display_name = display_names.get(db_id, nome.capitalize())
-            self.bancos_listbox.insert(tk.END, f"{db_id}. {display_name} ({nome})")
-            
-    def excluir_banco(self):
-        # Verifica se há algum item selecionado
-        if not self.bancos_listbox.curselection():
-            messagebox.showerror("Erro", "Selecione um banco para excluir.")
-            return
-        
-        # Obtém o item selecionado
-        selected_index = self.bancos_listbox.curselection()[0]
-        selected_item = self.bancos_listbox.get(selected_index)
-        
-        # Extrai o ID do banco
-        banco_id = selected_item.split(".")[0]
-        
-        # Confirma a exclusão
-        if not messagebox.askyesno("Confirmar Exclusão", f"Tem certeza que deseja excluir o banco {selected_item}?"):
-            return
-        
-        # Lê o conteúdo atual do arquivo .env
-        env_content = ""
-        if os.path.exists(ENV_PATH):
-            with open(ENV_PATH, "r") as f:
-                env_content = f.read()
-        
-        # Remove as linhas relacionadas a este banco
-        env_lines = env_content.splitlines()
-        new_env_lines = []
-        
-        for line in env_lines:
-            # Verifica se a linha está relacionada ao banco que queremos excluir
-            if not (line.startswith(f"BANCO_{banco_id}=") or 
-                    line.startswith(f"BANCO_{banco_id}_NOME=")):
-                new_env_lines.append(line)
-        
-        # Salva o arquivo .env atualizado
-        with open(ENV_PATH, "w") as f:
-            f.write("\n".join(new_env_lines) + "\n")
-        
-        # Recarrega as variáveis de ambiente
-        load_env_config()
-        
-        # Atualiza a lista de bancos
-        self.atualizar_lista_bancos()
-        
-        messagebox.showinfo("Sucesso", f"Banco excluído com sucesso.")
+            self.bancos_listbox.insert(tk.END, f"{display_name} ({nome})")
     
     def iniciar_processo(self):
         # Verifica se o .env está vazio ou não existe
