@@ -20,13 +20,25 @@ Aplicação para compilação e configuração de projetos Java com Maven.
 ### 2. Aplicação
 
 - **app_funcionando.py**: Aplicação principal original
-- **app_simplificado.py**: Nova aplicação que usa a interface simplificada
 
 ### 3. Teste
 
 - **testar_config.py**: Script para testar a configuração e a aplicação
 
 ## Como Usar
+
+### Configuração Completa
+
+Para usar a interface completa:
+
+```bash
+python config.py
+```
+
+A interface possui três abas:
+1. **Java/Maven**: Configuração dos diretórios JAVA_HOME e MAVEN_HOME
+2. **Origem do Banco**: Cadastro de origens de banco de dados
+3. **Nome do Banco**: Cadastro de nomes de banco de dados
 
 ### Configuração Simplificada
 
@@ -36,17 +48,14 @@ Para usar a nova interface simplificada:
 python config_simplificado.py
 ```
 
-A interface possui três abas:
-1. **Java/Maven**: Configuração dos diretórios JAVA_HOME e MAVEN_HOME
-2. **Origem do Banco**: Cadastro de origens de banco de dados
-3. **Nome do Banco**: Cadastro de nomes de banco de dados
+A interface possui as mesmas três abas, porém com visual mais simples.
 
-### Aplicação Simplificada
+### Aplicação Completa
 
-Para usar a aplicação com a interface simplificada:
+Para usar a aplicação principal:
 
 ```bash
-python app_simplificado.py
+python app_funcionando.py
 ```
 
 ### Teste
