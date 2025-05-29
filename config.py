@@ -193,9 +193,46 @@ class ConfigApp:
         self.root.title("Configuração do Sistema")
         self.root.geometry("600x700")
         
+        # Garantir que a janela de configuração seja modal e fique sobre a janela principal
+        self.root.transient(root.master if hasattr(root, 'master') and root.master else None)
+        self.root.grab_set()  # Torna a janela modal
+        
+        # Centraliza a janela em relação à tela atual onde a aplicação está
+        self.center_window_on_parent()
+        
         # Criar notebook (abas)
         self.notebook = ctk.CTkTabview(self.root)
         self.notebook.pack(fill="both", expand=True, padx=10, pady=10)
+        
+    def center_window_on_parent(self):
+        """Centraliza a janela em relação à tela onde a aplicação principal está"""
+        # Aguarda a janela ser desenhada
+        self.root.update_idletasks()
+        
+        # Obtém o tamanho e posição da janela
+        width = self.root.winfo_width()
+        height = self.root.winfo_height()
+        
+        # Obtém a posição da tela atual
+        if hasattr(self.root, 'master') and self.root.master:
+            # Se temos uma janela pai, centralizamos em relação a ela
+            parent = self.root.master
+            parent_x = parent.winfo_rootx()
+            parent_y = parent.winfo_rooty()
+            parent_width = parent.winfo_width()
+            parent_height = parent.winfo_height()
+            
+            x = parent_x + (parent_width - width) // 2
+            y = parent_y + (parent_height - height) // 2
+        else:
+            # Caso contrário, centralizamos na tela principal
+            screen_width = self.root.winfo_screenwidth()
+            screen_height = self.root.winfo_screenheight()
+            x = (screen_width - width) // 2
+            y = (screen_height - height) // 2
+        
+        # Define a posição da janela
+        self.root.geometry(f"{width}x{height}+{x}+{y}")
         
         # Criar abas
         self.tab_java_maven = self.notebook.add("Java/Maven")

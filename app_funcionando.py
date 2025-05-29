@@ -195,8 +195,9 @@ app.grid_columnconfigure(0, weight=1)
 app.grid_rowconfigure(0, weight=1)
 
 # Define o tamanho inicial da janela e centraliza
-window_width = min(1100, app.winfo_screenwidth() - 100)
-window_height = min(800, app.winfo_screenheight() - 100)
+# Ajustado para melhor responsividade em telas menores (1366x768)
+window_width = min(1000, app.winfo_screenwidth() - 100)
+window_height = min(700, app.winfo_screenheight() - 100)
 app.after(10, lambda: center_window(app, window_width, window_height))  # Centraliza após a janela ser criada
 
 # Container principal para organizar todos os elementos
@@ -276,65 +277,80 @@ log_box.pack(fill="both", expand=True, padx=10, pady=10)
 # Botões de Controle
 btn_frame = ctk.CTkFrame(main_container)
 btn_frame.pack(fill="x", padx=20, pady=10)
-btn_frame.grid_columnconfigure((0, 1, 2, 3), weight=1)
+btn_frame.grid_columnconfigure((0, 1, 2), weight=1)
 
-start_button = ctk.CTkButton(btn_frame, text="Iniciar Processo", state="disabled", width=200, command=lambda: threading.Thread(target=iniciar_processo, args=(diretorio_entry, branch_combo, banco_combo, origem_combo, compilacao_combo, branch_origem_combo, log_box, status_label, start_button), daemon=True).start())
+# Ajustado para melhor responsividade em telas menores
+button_width = 180  # Reduzido para caber em telas menores
+start_button = ctk.CTkButton(btn_frame, text="Iniciar Processo", state="disabled", width=button_width, command=lambda: threading.Thread(target=iniciar_processo, args=(diretorio_entry, branch_combo, banco_combo, origem_combo, compilacao_combo, branch_origem_combo, log_box, status_label, start_button), daemon=True).start())
 start_button.pack(side="left", padx=5)
 
 # Função para atualizar a interface após alterações nas configurações
 def atualizar_interface():
     # Recarrega as configurações
+    old_origem_values = get_origin_combo_values()
+    old_banco_values = get_db_combo_values()
+    
+    # Recarrega as configurações
     reload_configurations()
     
-    # Atualiza os valores dos comboboxes
-    origem_combo.configure(values=get_origin_combo_values())
-    banco_combo.configure(values=get_db_combo_values())
+    # Obtém os novos valores
+    new_origem_values = get_origin_combo_values()
+    new_banco_values = get_db_combo_values()
     
-    # Se houver valores selecionados, tenta mantê-los
-    if origem_combo.get():
-        if origem_combo.get() not in get_origin_combo_values():
-            origem_combo.set("")
-    
-    if banco_combo.get():
-        if banco_combo.get() not in get_db_combo_values():
-            banco_combo.set("")
-    
-    # Exibe mensagem de confirmação
-    messagebox.showinfo("Configurações", "Configurações atualizadas com sucesso!")
+    # Verifica se houve alterações antes de atualizar a interface
+    if old_origem_values != new_origem_values or old_banco_values != new_banco_values:
+        # Atualiza os valores dos comboboxes
+        origem_combo.configure(values=new_origem_values)
+        banco_combo.configure(values=new_banco_values)
+        
+        # Se houver valores selecionados, tenta mantê-los
+        if origem_combo.get():
+            if origem_combo.get() not in new_origem_values:
+                origem_combo.set("")
+        
+        if banco_combo.get():
+            if banco_combo.get() not in new_banco_values:
+                banco_combo.set("")
+        
+        # Exibe mensagem de confirmação
+        messagebox.showinfo("Configurações", "Configurações atualizadas com sucesso!")
+    # Se não houve alterações, não faz nada e não exibe mensagem
 
 # Botão para abrir a tela de configuração
 def abrir_tela_configuracao():
     try:
-        # Obtém o diretório atual do script
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        config_path = os.path.join(script_dir, "config.py")
+        # Importa o módulo de configuração diretamente
+        from config import ConfigApp, load_env_config
         
-        # Verifica se o arquivo config.py existe
-        if not os.path.exists(config_path):
-            messagebox.showerror("Erro", f"Arquivo de configuração não encontrado: {config_path}")
-            return
+        # Cria uma nova janela de nível superior que será filha da janela principal
+        config_window = ctk.CTkToplevel(app)
+        config_window.withdraw()  # Esconde a janela até que esteja configurada
         
-        # Abre a tela de configuração e aguarda sua conclusão
-        process = subprocess.Popen([sys.executable, config_path])
+        # Torna a janela modal (bloqueia interação com a janela principal)
+        config_window.transient(app)
+        config_window.grab_set()
         
-        # Configura um verificador periódico para atualizar a interface quando o processo terminar
-        def check_process():
-            if process.poll() is not None:  # Processo terminou
-                atualizar_interface()
-            else:
-                # Verifica novamente após 1 segundo
-                app.after(1000, check_process)
+        # Inicializa a aplicação de configuração
+        config_app = ConfigApp(config_window)
         
-        # Inicia a verificação
-        app.after(1000, check_process)
+        # Função para atualizar a interface quando a janela de configuração for fechada
+        def on_config_close():
+            atualizar_interface()
+            config_window.destroy()
+        
+        # Configura o evento de fechamento
+        config_window.protocol("WM_DELETE_WINDOW", on_config_close)
+        
+        # Exibe a janela após configurá-la
+        config_window.deiconify()
         
     except Exception as e:
         messagebox.showerror("Erro", f"Erro ao abrir configurações: {str(e)}")
 
-config_button = ctk.CTkButton(btn_frame, text="Configuração", command=abrir_tela_configuracao)
+config_button = ctk.CTkButton(btn_frame, text="Configuração", width=button_width, command=abrir_tela_configuracao)
 config_button.pack(side="left", padx=5)
 
-clear_button = ctk.CTkButton(btn_frame, text="Limpar Log", command=lambda: log_box.configure(state="normal") or log_box.delete(1.0, ctk.END) or log_box.configure(state="disabled"))
+clear_button = ctk.CTkButton(btn_frame, text="Limpar Log", width=button_width, command=lambda: log_box.configure(state="normal") or log_box.delete(1.0, ctk.END) or log_box.configure(state="disabled"))
 clear_button.pack(side="right", padx=5)
 
 app.mainloop()
