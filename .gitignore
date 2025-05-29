@@ -1,0 +1,12 @@
+__pycache__/config.cpython-313.pyc
+__pycache__/config.cpython-313.pyc
+# Ignorar arquivos e pastas específicas
+.env
+antigo/
+backup1/
+backup2/
+__pycache__/config.cpython-313.pyc
+pastav/
+\__pycache__
+.venv/
+antigo/docker-compose.yaml
