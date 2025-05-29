@@ -270,8 +270,14 @@ class ConfigApp:
             env_lines.append(f"MAVEN_HOME={maven_home}")
 
             # Garante que cada linha termina com '\n' ao salvar
-            with open(ENV_PATH, "w") as f:
-                f.write("\n".join(env_lines) + "\n")
+            # Verifica se o arquivo existe e tem conteúdo
+            if os.path.exists(ENV_PATH) and os.path.getsize(ENV_PATH) > 0:
+                with open(ENV_PATH, "w") as f:
+                    f.write("\n".join(env_lines) + "\n")
+            else:
+                # Se o arquivo não existir ou estiver vazio, cria com as configurações
+                with open(ENV_PATH, "a") as f:
+                    f.write("\n".join(env_lines) + "\n")
 
             # Recarrega as variáveis de ambiente
             load_env_config()

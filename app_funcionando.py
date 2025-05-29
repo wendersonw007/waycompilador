@@ -189,15 +189,15 @@ ctk.set_default_color_theme("blue")
 app = ctk.CTk()
 app.title("Sifat Compilador Waybe Web Java")
 
-# Define o tamanho inicial da janela e centraliza
-window_width = 1100
-window_height = 800
-app.after(10, lambda: center_window(app, window_width, window_height))  # Centraliza após a janela ser criada
-
 # Configura a janela para ser responsiva
 app.resizable(True, True)
 app.grid_columnconfigure(0, weight=1)
 app.grid_rowconfigure(0, weight=1)
+
+# Define o tamanho inicial da janela e centraliza
+window_width = min(1100, app.winfo_screenwidth() - 100)
+window_height = min(800, app.winfo_screenheight() - 100)
+app.after(10, lambda: center_window(app, window_width, window_height))  # Centraliza após a janela ser criada
 
 # Container principal para organizar todos os elementos
 main_container = ctk.CTkFrame(app)
@@ -333,10 +333,6 @@ def abrir_tela_configuracao():
 
 config_button = ctk.CTkButton(btn_frame, text="Configuração", command=abrir_tela_configuracao)
 config_button.pack(side="left", padx=5)
-
-# Botão para atualizar configurações manualmente
-refresh_button = ctk.CTkButton(btn_frame, text="Atualizar Configurações", command=atualizar_interface)
-refresh_button.pack(side="left", padx=5)
 
 clear_button = ctk.CTkButton(btn_frame, text="Limpar Log", command=lambda: log_box.configure(state="normal") or log_box.delete(1.0, ctk.END) or log_box.configure(state="disabled"))
 clear_button.pack(side="right", padx=5)
