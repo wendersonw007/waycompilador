@@ -9,6 +9,9 @@ from typing import Dict, Tuple, List
 # Caminho do arquivo .env
 ENV_PATH = ".env"
 
+# Removido o bloqueio global do .env vazio para permitir acesso à interface.
+# O aviso será feito apenas ao tentar iniciar o processo principal.
+
 def load_env_config():
     """Carrega todas as configurações do arquivo .env"""
     if os.path.exists(ENV_PATH):
@@ -251,28 +254,28 @@ class ConfigApp:
             # Atualiza o arquivo .env com os novos valores
             java_home = self.entry_java.get()
             maven_home = self.entry_maven.get()
-            
+
             # Lê o conteúdo atual do arquivo .env
             env_content = ""
             if os.path.exists(ENV_PATH):
                 with open(ENV_PATH, "r") as f:
                     env_content = f.read()
-            
+
             # Remove as linhas existentes de JAVA_HOME e MAVEN_HOME
             env_lines = env_content.splitlines()
             env_lines = [line for line in env_lines if not line.startswith("JAVA_HOME=") and not line.startswith("MAVEN_HOME=")]
-            
+
             # Adiciona as novas linhas
             env_lines.append(f"JAVA_HOME={java_home}")
             env_lines.append(f"MAVEN_HOME={maven_home}")
-            
-            # Escreve de volta no arquivo .env
+
+            # Garante que cada linha termina com '\n' ao salvar
             with open(ENV_PATH, "w") as f:
-                f.write("\n".join(env_lines))
-            
+                f.write("\n".join(env_lines) + "\n")
+
             # Recarrega as variáveis de ambiente
             load_env_config()
-            
+
             messagebox.showinfo("Salvo", "Configurações de JAVA e MAVEN salvas com sucesso.")
         
         btn_salvar = ctk.CTkButton(self.tab_java_maven, text="Salvar Configurações", command=salvar_java_maven)
@@ -488,6 +491,12 @@ class ConfigApp:
         for db_id, nome in bancos.items():
             display_name = display_names.get(db_id, nome.capitalize())
             self.bancos_listbox.insert(tk.END, f"{display_name} ({nome})")
+    
+    def iniciar_processo(self):
+        # Verifica se o .env está vazio ou não existe
+        if not os.path.exists(ENV_PATH) or os.stat(ENV_PATH).st_size == 0:
+            messagebox.showerror("Configuração ausente", "O arquivo .env está vazio ou não foi encontrado. Realize a configuração inicial pelo menu de configurações.")
+            return
 
 if __name__ == "__main__":
     # Carrega as configurações do arquivo .env
